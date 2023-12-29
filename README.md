@@ -1,4 +1,4 @@
-# mchst-server
+# chat-server
 
 ### 系统需求
 
