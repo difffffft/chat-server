@@ -1,4 +1,5 @@
 import json
+import time
 
 from flask import Flask, request, Response
 from flask_cors import CORS
@@ -73,7 +74,7 @@ def get_context_messages(token_num=0):
             if item.content:
                 token_str += item.content
 
-        token_num += num_tokens_from_string(base_model, token_str)
+        token_num += num_tokens_from_string(token_str)
         if token_num < 15000:
             context_messages.append(item)
         else:
@@ -104,6 +105,7 @@ def chat_have_plugin_list():
         tools=[plugin.info() for plugin in plugin_list],
         tool_choice="auto"
     )
+
     if func_response:
         response_message = func_response.choices[0].message
         tool_calls = response_message.tool_calls

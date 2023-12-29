@@ -25,7 +25,7 @@ class BasePlugin:
 
     def run(self, params: dict):
         res = self.start(params)
-        num = num_tokens_from_string(base_model, res)
+        num = num_tokens_from_string(res)
         if num > 15000:
             raise Exception('工具返回TOKEN过长')
         return res
