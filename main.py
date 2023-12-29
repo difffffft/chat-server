@@ -158,7 +158,7 @@ def chat_stream():
     messages = get_context_messages()
     messages.append({
         "role": "system",
-        "content": "You can only answer the user markdown format!"
+        "content": "You can only answer the user markdown format! Normally, you should answer users in Chinese!"
     })
     # 开始回答问题
     stream_response = base_client.chat.completions.create(

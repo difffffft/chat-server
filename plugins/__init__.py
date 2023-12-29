@@ -6,6 +6,7 @@ from .run_python_code_plugin import RunPythonCodePlugin as RunPythonCodePlugin
 from .realtime_time_plugin import RealtimeTimePlugin as RealtimeTimePlugin
 from .reward_author_plugin import RewardAuthorPlugin as RewardAuthorPlugin
 from .design_software_plugin import DesignSoftwarePlugin as DesignSoftwarePlugin
+from .three_rubik_cube_course_plugin import ThreeRubikCubeCoursePlugin as ThreeRubikCubeCoursePlugin
 
 """
 OpenAi会根据自己的需要, 自动调用插件的内容, 你要做的就是根据规则创建插件和维护插件
@@ -27,5 +28,7 @@ plugin_list = [
     # 打赏作者
     RewardAuthorPlugin(),
     # 常用设计软件的下载
-    DesignSoftwarePlugin()
+    DesignSoftwarePlugin(),
+    # 魔方还原教程
+    ThreeRubikCubeCoursePlugin()
 ]
