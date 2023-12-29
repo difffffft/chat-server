@@ -6,7 +6,7 @@ base_client = OpenAI(api_key=CONFIG['APP']['OPENAI']['API_KEY'],
                      base_url=CONFIG['APP']['OPENAI']['BASE_URL'])
 
 # 只能使用的模型
-base_model = "gpt-3.5-turbo"
+base_model = "gpt-3.5-turbo-1106"
 
 # 基础的响应体
 base_response_headers = {

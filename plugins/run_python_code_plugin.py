@@ -28,7 +28,7 @@ class RunPythonCodePlugin(BasePlugin):
     
     我桌面的地址是C:\\Users\\67222\\Desktop，桌面有一个文件夹叫hello，里面有很多txt文件，帮我把文件重命名为1-10.txt
     """
-    def run(self, params):
+    def start(self, params):
         code = params['code']
         file_path = os.path.join(os.getcwd(), f"temp/{uuid4()}.py")
         with open(file_path, 'w', encoding='utf-8') as f:

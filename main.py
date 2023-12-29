@@ -2,68 +2,100 @@ import json
 
 from flask import Flask, request, Response
 from flask_cors import CORS
+from openai.types.chat import ChatCompletionMessage, ChatCompletionMessageToolCall
+from openai.types.chat.chat_completion_message_tool_call import Function
 
 from client import base_client, base_model, base_response_headers, get_base_system_messages
 from plugins import plugin_list
 
 from config import CONFIG
+from utils import num_tokens_from_string
 
 app = Flask(__name__)
 app.static_folder = CONFIG['APP']['STATIC_FOLDER']
 CORS(app, supports_credentials=True, resources=r"/*")
 
 
-@app.route("/chat/token/count", methods=["GET"])
-def chat_token_count():
+def get_all_context_messages():
     """
-    获取最大token数量
+    获取所有的上下问对话
     :return:
     """
-    # data = request.json
-    response = base_client.chat.completions.create(
-        model=base_model,
-        prompt="XX",
-        max_tokens=1
-    )
-    return response['usage']['total_tokens']
-
-
-@app.route("/chat/data-analysis", methods=["POST"])
-def chat_data_analysis():
-    """
-    数据分析，数据整理
-    :return:
-    """
-    data = request.json
-    response = base_client.chat.completions.create(
-        model=base_model,
-        messages=[
-            {"role": "system",
-             "content": "Please find the answer in the data given by the user"},
-            {"role": "user", "content": "data:" + data['data'] + "\nquestions:" + data['prompt']},
-        ]
-    )
-    return response.choices[0].message.content
-
-
-@app.route("/chat/stream", methods=["POST"])
-def chat_stream():
     # 用户的上下文
-    context_list = request.json['context_list']
+    chat_list = request.json['chat_list']
     # 基础上下文
-    messages = get_base_system_messages()
-    # 封装新的上下文
-    for item in context_list:
-        for q in item['q']['list']:
+    messages = []
+    # 清洗上下文数据
+    for item in chat_list:
+        # 函数调用
+        if item.get('tool_calls', None):
+            tool_calls = []
+            for n in item['tool_calls']:
+                tool_calls.append(ChatCompletionMessageToolCall(id=n['id'], type=n['type'],
+                                                                function=Function(arguments=n['function']['arguments'],
+                                                                                  name=n['function']['name'])))
+            messages.append(ChatCompletionMessage(content=item['content'], role=item['role'],
+                                                  tool_calls=tool_calls))
+        # 调用结果
+        elif item.get('tool_call_id', None):
             messages.append({
-                "role": item['q']['role'],
-                "content": q['content']
+                "tool_call_id": item['tool_call_id'],
+                "name": item['name'],
+                "role": item['role'],
+                "content": item['content'],
             })
-        for a in item['a']['list']:
+        else:
             messages.append({
-                "role": item['a']['role'],
-                "content": a['content']
+                "role": item['role'],
+                "content": item['content'],
             })
+    return messages
+
+
+def clear_tool(context_messages):
+    if isinstance(context_messages[-1], dict) and context_messages[-1].get('tool_call_id'):
+        context_messages.pop(-1)
+        clear_tool(context_messages)
+    else:
+        pass
+
+
+# 清洗数据
+def get_context_messages(token_num=0):
+    token_str = ""
+    all_context_messages = get_all_context_messages()
+    context_messages = []
+    for item in all_context_messages[::-1]:
+        if isinstance(item, dict):
+            if item['content']:
+                token_str += item['content']
+        else:
+            if item.content:
+                token_str += item.content
+
+        token_num += num_tokens_from_string(base_model, token_str)
+        if token_num < 15000:
+            context_messages.append(item)
+        else:
+            break
+
+    # 如果截取到tool_call_id
+    clear_tool(context_messages)
+
+    base_context_messages = get_base_system_messages()
+    for item in base_context_messages[::-1]:
+        context_messages.append(item)
+
+    context_messages.reverse()
+
+    print(context_messages)
+    return context_messages
+
+
+@app.route("/chat/have/plugin/list", methods=["POST"])
+def chat_have_plugin_list():
+    messages = get_context_messages()
+
     # 判断程序是否需要调用工具
     func_response = base_client.chat.completions.create(
         model=base_model,
@@ -75,31 +107,60 @@ def chat_stream():
     if func_response:
         response_message = func_response.choices[0].message
         tool_calls = response_message.tool_calls
-        # 如果有函数
+        # 如果有插件
         if tool_calls:
-            messages.append(response_message)
-            # 调用函数
+            danger_flag = False
             for tool_call in tool_calls:
                 plugin_name = tool_call.function.name
-                plugin_arguments = tool_call.function.arguments
-                # print("运行插件", plugin_name, plugin_arguments)
                 plugin = next((plugin for plugin in plugin_list if plugin.name == plugin_name), None)
                 if plugin:
-                    plugin_response = plugin.run(json.loads(plugin_arguments))
-                    messages.append(
-                        {
-                            "tool_call_id": tool_call.id,
-                            "role": "tool",
-                            "name": plugin_name,
-                            "content": plugin_response,
-                        }
-                    )
+                    if plugin.danger:
+                        danger_flag = True
                 else:
                     raise Exception(f"插件{plugin_name}不存在")
 
-    # 插件执行完成
+            res = response_message.model_dump_json()
+            return {
+                "danger_flag": danger_flag,
+                "plugin_list": json.loads(res)
+            }
+        else:
+            return json.dumps(None)
+
+
+@app.route("/chat/run/plugin/list", methods=["POST"])
+def chat_run_plugin_list():
+    """
+    运行插件列表
+    :return:
+    """
+    tool_calls = request.json['tool_calls']
+    for tool_call in tool_calls:
+        plugin_name = tool_call['function']['name']
+        plugin_arguments = tool_call['function']['arguments']
+        plugin = next((plugin for plugin in plugin_list if plugin.name == plugin_name), None)
+        if plugin:
+            try:
+                plugin_response = plugin.run(json.loads(plugin_arguments))
+                tool_call['response'] = plugin_response
+            except Exception as e:
+                print(e)
+                raise Exception('插件运行异常')
+        else:
+            raise Exception(f"插件{plugin_name}不存在")
+    return tool_calls
+
+
+@app.route("/chat/stream", methods=["POST"])
+def chat_stream():
+    messages = get_context_messages()
+    messages.append({
+        "role": "system",
+        "content": "You can only answer the user markdown format!"
+    })
+    # 开始回答问题
     stream_response = base_client.chat.completions.create(
-        model="gpt-3.5-turbo-1106",
+        model=base_model,
         messages=messages,
         stream=True
     )

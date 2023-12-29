@@ -30,19 +30,20 @@ class DesignSoftwarePlugin(BasePlugin):
     我想下载ps
     """
 
-    def run(self, params):
+    def start(self, params):
         res = {
-            "zip_password": "ruancang.net",
-            "list": []
+            "code": 0,
+            "data": "https://ruancang.net",
+            "message": "",
         }
-        chrome = Chrome()
-        soup = chrome.get_soup(f"https://ruancang.net/#/?page=0&id={0}")
-        for result in soup.find_all('nz-card'):
-            href = result.find_all('a')[0].get('href')
-            title = result.find('div', class_=re.compile('^title')).get_text()
-            res["list"].append({
-                href: href,
-                title: title
-            })
-        chrome.quit()
+        # chrome = Chrome()
+        # soup = chrome.get_soup(f"https://ruancang.net/#/?page=0&id={0}")
+        # for result in soup.find_all('nz-card'):
+        #     href = result.find_all('a')[0].get('href')
+        #     title = result.find('div', class_=re.compile('^title')).get_text()
+        #     res["list"].append({
+        #         href: href,
+        #         title: title
+        #     })
+        # chrome.quit()
         return json.dumps({"content": res})

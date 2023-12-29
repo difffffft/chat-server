@@ -29,10 +29,3 @@ plugin_list = [
     # 常用设计软件的下载
     DesignSoftwarePlugin()
 ]
-
-if CONFIG['ENV'] == "development":
-    plugin_list.append(SearchEnginePlugin())
-    plugin_list.append(RealtimeNewsPlugin())
-    plugin_list.append(RunPythonCodePlugin())
-else:
-    pass

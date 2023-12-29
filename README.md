@@ -32,14 +32,4 @@ python main.py
 
 ```
 pip freeze > requirements.txt
-``` 
-
-### 支持Dockerfile部署（不包含mysql和redis环境）
-
-```
-构建镜像
-docker build -t chat-server .
-
-运行容器
-docker run -dit --name chat-server -p 8080:8080 chat-server
 ```

@@ -1,4 +1,5 @@
 import json
+import time
 
 from .base_plugin import BasePlugin
 from datetime import datetime
@@ -19,7 +20,7 @@ class RealtimeTimePlugin(BasePlugin):
     当前时间
     现在时间是多久
     """
-    def run(self, params):
+    def start(self, params):
         current_datetime = datetime.now()
 
         current_date = current_datetime.strftime("%Y-%m-%d")

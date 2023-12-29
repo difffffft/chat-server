@@ -22,7 +22,7 @@ class SearchEnginePlugin(BasePlugin):
             "required": ["limit"],
         }
 
-    def run(self, params):
+    def start(self, params):
         chrome = Chrome()
 
         wd = params.get('wd', '')

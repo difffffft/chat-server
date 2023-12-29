@@ -22,7 +22,7 @@ class RealtimeNewsPlugin(BasePlugin):
             "required": ["limit"],
         }
 
-    def run(self, params):
+    def start(self, params):
         chrome = Chrome()
         soup = chrome.get_soup("https://top.baidu.com/board?tab=realtime")
 
