@@ -1,9 +1,13 @@
+import os
+
 from openai import OpenAI
-from config import CONFIG
+
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+OPENAI_BASE_URL = os.getenv('OPENAI_BASE_URL')
 
 # 客户端
-base_client = OpenAI(api_key=CONFIG['APP']['OPENAI']['API_KEY'],
-                     base_url=CONFIG['APP']['OPENAI']['BASE_URL'])
+base_client = OpenAI(api_key=OPENAI_API_KEY,
+                     base_url=OPENAI_BASE_URL)
 
 # 只能使用的模型
 base_model = "gpt-3.5-turbo-1106"

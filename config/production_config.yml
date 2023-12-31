@@ -1,0 +1,6 @@
+ENV: production
+APP:
+  PORT: 8080
+  OPENAI:
+    API_KEY: ""
+    BASE_URL: ""
